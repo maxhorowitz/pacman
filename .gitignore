@@ -1,1 +1,3 @@
 env/
+*.svg
+__pycache__
