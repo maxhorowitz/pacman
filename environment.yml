@@ -1,0 +1,6 @@
+# run: conda env create --file environment.yml
+name: chess-env
+dependencies:
+- python>=3.5
+- pip:
+  - python-chess

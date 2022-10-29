@@ -1,7 +1,8 @@
+init-env:
+	conda env create --file environment.yml
 
+start-env:
+	conda activate chess-env
 
-venv:
-	source env/bin/activate
-
-leave-venv:
-	deactivate
+leave-env:
+	conda deactivate
