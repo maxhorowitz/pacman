@@ -6,3 +6,6 @@ start-env:
 
 leave-env:
 	conda deactivate
+
+delete-env:
+	conda env remove -n chess-env
