@@ -10,7 +10,7 @@ leave-env:
 delete-env:
 	conda env remove -n pacman-env
 
-play:
+user:
 	python run.py user
 
 ai:

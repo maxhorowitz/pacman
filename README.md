@@ -10,7 +10,7 @@ To delete the virtual environment, run `conda env remove -n pacman-env`.
 
 # Gameplay
 To watch the AI engine play on its own, run `make ai`.
-To play yourself, write `make play`.
+To play yourself, write `make user`.
 
 # Credits
 Uses 'pacmancode' for Pacman game implementation (rules, gameflow, etc.) as well as for its GUI. It can be found at https://pacmancode.com.

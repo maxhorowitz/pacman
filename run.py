@@ -13,6 +13,8 @@ from sprites import MazeSprites
 from mazedata import MazeData
 import sys
 
+from bestDirection import bestDirection
+
 class GameController(object):
     def __init__(self, isAi):
         pygame.init()
@@ -279,8 +281,7 @@ class GameController(object):
         pygame.display.update()
 
     def aiBestDirection(self):
-        return RIGHT
-
+        return bestDirection(self.clock, self.fruit, self.level, self.lives, self.score, self.nodes, self.pellets, self.ghosts)
 
 if __name__ == "__main__":
     gameMode = str(sys.argv[1])
