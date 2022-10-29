@@ -9,4 +9,4 @@ To leave the virtual environment when you are done playing, run `conda deactivat
 To delete the virtual environment, `run conda env remove -n pacman-env`.
 
 # Credits
-Use 'pacmancode' for Pacman game implementation (rules, gameflow, etc.) as well as for its GUI. It can be found at https://pacmancode.com.
+Uses 'pacmancode' for Pacman game implementation (rules, gameflow, etc.) as well as for its GUI. It can be found at https://pacmancode.com.
