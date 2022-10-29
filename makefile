@@ -1,14 +1,14 @@
 init-env:
-	conda env create --file environment.yml && conda activate chess-env
+	conda env create --file environment.yml && conda activate pacman-env
 
 start-env:
-	conda activate chess-env
+	conda activate pacman-env
 
 leave-env:
 	conda deactivate
 
 delete-env:
-	conda env remove -n chess-env
+	conda env remove -n pacman-env
 
 play:
-	python simple-chess-game/gui.py
+	python simple-pacman-game/gui.py
