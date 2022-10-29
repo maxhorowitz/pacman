@@ -11,9 +11,10 @@ from text import TextGroup
 from sprites import LifeSprites
 from sprites import MazeSprites
 from mazedata import MazeData
+import sys
 
 class GameController(object):
-    def __init__(self):
+    def __init__(self, isAi):
         pygame.init()
         self.screen = pygame.display.set_mode(SCREENSIZE, 0, 32)
         self.background = None
@@ -33,6 +34,7 @@ class GameController(object):
         self.fruitCaptured = []
         self.fruitNode = None
         self.mazedata = MazeData()
+        self.isAi = (isAi == "ai")
 
     def setBackground(self):
         self.background_norm = pygame.surface.Surface(SCREENSIZE).convert()
@@ -44,7 +46,7 @@ class GameController(object):
         self.flashBG = False
         self.background = self.background_norm
 
-    def startGame(self):      
+    def startGame(self):
         self.mazedata.loadMaze(self.level)
         self.mazesprites = MazeSprites(self.mazedata.obj.name+".txt", self.mazedata.obj.name+"_rotation.txt")
         self.setBackground()
@@ -96,8 +98,6 @@ class GameController(object):
         self.nodes.denyAccessList(12, 26, UP, self.ghosts)
         self.nodes.denyAccessList(15, 26, UP, self.ghosts)
 
-        
-
     def update(self):
         dt = self.clock.tick(30) / 1000.0
         self.textgroup.update(dt)
@@ -110,11 +110,21 @@ class GameController(object):
             self.checkGhostEvents()
             self.checkFruitEvents()
 
-        if self.pacman.alive:
-            if not self.pause.paused:
+# We added (begin)
+        if self.isAi == True:
+            if self.pacman.alive:
+                if not self.pause.paused:
+                    bestDirection = self.aiBestDirection()
+                    self.pacman.updateAi(dt, bestDirection)
+            else:
+                self.pacman.updateAi(dt, bestDirection)
+        else: # self.isAi == False
+            if self.pacman.alive:
+                if not self.pause.paused:
+                    self.pacman.update(dt)
+            else:
                 self.pacman.update(dt)
-        else:
-            self.pacman.update(dt)
+# We added (end)
 
         if self.flashBG:
             self.flashTimer += dt
@@ -268,9 +278,14 @@ class GameController(object):
 
         pygame.display.update()
 
+    def aiBestDirection(self):
+        return RIGHT
+
 
 if __name__ == "__main__":
-    game = GameController()
+    gameMode = str(sys.argv[1])
+    print(gameMode)
+    game = GameController(gameMode)
     game.startGame()
     while True:
         game.update()

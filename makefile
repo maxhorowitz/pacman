@@ -11,7 +11,7 @@ delete-env:
 	conda env remove -n pacman-env
 
 play:
-	python run.py
+	python run.py user
 
 ai:
-	python run.py
+	python run.py ai
