@@ -35,21 +35,21 @@ BOARD_COLORS = [(GRAY_LIGHT, GRAY_DARK),
                 (LICHESS_GRAY_LIGHT, LICHESS_GRAY_DARK)]
 BOARD_COLOR = choice(BOARD_COLORS)
 
-BLACK_KING   = pygame.image.load('images/black_king.png')
-BLACK_QUEEN  = pygame.image.load('images/black_queen.png')
-BLACK_ROOK   = pygame.image.load('images/black_rook.png')
-BLACK_BISHOP = pygame.image.load('images/black_bishop.png')
-BLACK_KNIGHT = pygame.image.load('images/black_knight.png')
-BLACK_PAWN   = pygame.image.load('images/black_pawn.png')
-BLACK_JOKER  = pygame.image.load('images/black_joker.png')
+BLACK_KING   = pygame.image.load('simple-chess-game/images/black_king.png')
+BLACK_QUEEN  = pygame.image.load('simple-chess-game/images/black_queen.png')
+BLACK_ROOK   = pygame.image.load('simple-chess-game/images/black_rook.png')
+BLACK_BISHOP = pygame.image.load('simple-chess-game/images/black_bishop.png')
+BLACK_KNIGHT = pygame.image.load('simple-chess-game/images/black_knight.png')
+BLACK_PAWN   = pygame.image.load('simple-chess-game/images/black_pawn.png')
+BLACK_JOKER  = pygame.image.load('simple-chess-game/images/black_joker.png')
 
-WHITE_KING   = pygame.image.load('images/white_king.png')
-WHITE_QUEEN  = pygame.image.load('images/white_queen.png')
-WHITE_ROOK   = pygame.image.load('images/white_rook.png')
-WHITE_BISHOP = pygame.image.load('images/white_bishop.png')
-WHITE_KNIGHT = pygame.image.load('images/white_knight.png')
-WHITE_PAWN   = pygame.image.load('images/white_pawn.png')
-WHITE_JOKER  = pygame.image.load('images/white_joker.png')
+WHITE_KING   = pygame.image.load('simple-chess-game/images/white_king.png')
+WHITE_QUEEN  = pygame.image.load('simple-chess-game/images/white_queen.png')
+WHITE_ROOK   = pygame.image.load('simple-chess-game/images/white_rook.png')
+WHITE_BISHOP = pygame.image.load('simple-chess-game/images/white_bishop.png')
+WHITE_KNIGHT = pygame.image.load('simple-chess-game/images/white_knight.png')
+WHITE_PAWN   = pygame.image.load('simple-chess-game/images/white_pawn.png')
+WHITE_JOKER  = pygame.image.load('simple-chess-game/images/white_joker.png')
 
 CLOCK = pygame.time.Clock()
 CLOCK_TICK = 15
@@ -57,7 +57,7 @@ CLOCK_TICK = 15
 SCREEN = pygame.display.set_mode((8*SQUARE_SIDE, 8*SQUARE_SIDE), pygame.RESIZABLE)
 SCREEN_TITLE = 'Chess Game'
 
-pygame.display.set_icon(pygame.image.load('images/chess_icon.ico'))
+pygame.display.set_icon(pygame.image.load('simple-chess-game/images/chess_icon.ico'))
 pygame.display.set_caption(SCREEN_TITLE)
 
 def resize_screen(square_side_len):
@@ -229,7 +229,7 @@ def play_as(game, color):
                     print_board(game.board, color)
     except:
         print(format_exc(), file=stderr)
-        bug_file = open('bug_report.txt', 'a')
+        bug_file = open('simple-chess-game/bug_report.txt', 'a')
         bug_file.write('----- ' + strftime('%x %X') + ' -----\n')
         bug_file.write(format_exc())
         bug_file.write('\nPlaying as WHITE:\n\t' if color == chess.WHITE else '\nPlaying as BLACK:\n\t')

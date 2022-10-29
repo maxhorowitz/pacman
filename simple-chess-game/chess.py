@@ -1423,7 +1423,7 @@ def find_in_book(game):
         return False
     
     openings = []
-    book_file = open("book.txt")
+    book_file = open("simple-chess-game/book.txt")
     for line in book_file:
         if line.startswith(game.get_move_list()) and line.rstrip() > game.get_move_list():
             openings.append(line.rstrip())
