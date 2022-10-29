@@ -11,4 +11,7 @@ delete-env:
 	conda env remove -n pacman-env
 
 play:
-	python simple-pacman-game/gui.py
+	python run.py
+
+ai:
+	python run.py
