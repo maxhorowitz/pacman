@@ -1,5 +1,8 @@
 import chess
 
-board = chess.Board()
+def main():
+  board = chess.chess.svg.board(board: chess.BaseBoard)
 
-print(board)
+  print(board)
+
+main()

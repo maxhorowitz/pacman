@@ -1,5 +1,7 @@
-env:
+
+
+venv:
 	source env/bin/activate
 
-leave-env:
+leave-venv:
 	deactivate
