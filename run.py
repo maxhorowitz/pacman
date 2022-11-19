@@ -13,7 +13,7 @@ from sprites import MazeSprites
 from mazedata import MazeData
 import sys
 
-from bestDirection import bestDirection
+from aiEngine import aiEngine
 
 class GameController(object):
     def __init__(self, isAi):
@@ -111,23 +111,16 @@ class GameController(object):
             self.checkPelletEvents()
             self.checkGhostEvents()
             self.checkFruitEvents()
-
 # We added (begin)
+        bestDirection = None
         if self.isAi == True:
-            if self.pacman.alive:
-                if not self.pause.paused:
-                    bestDirection = self.aiBestDirection()
-                    self.pacman.updateAi(dt, bestDirection)
-            else:
-                self.pacman.updateAi(dt, bestDirection)
-        else: # self.isAi == False
-            if self.pacman.alive:
-                if not self.pause.paused:
-                    self.pacman.update(dt)
-            else:
-                self.pacman.update(dt)
+            bestDirection = self.ai()
+        if self.pacman.alive:
+            if not self.pause.paused:
+                self.pacman.update(dt, bestDirection)
+        else:
+            self.pacman.update(dt, bestDirection)
 # We added (end)
-
         if self.flashBG:
             self.flashTimer += dt
             if self.flashTimer >= self.flashTime:
@@ -280,8 +273,10 @@ class GameController(object):
 
         pygame.display.update()
 
-    def aiBestDirection(self):
-        return bestDirection(self.clock, self.fruit, self.level, self.lives, self.score, self.nodes, self.pellets, self.ghosts)
+    #  ai() returns best direction to move. Options are as follows:
+    #  STOP (0), UP (1), DOWN (-1), LEFT (2), RIGHT (-2), PORTAL (3)
+    def ai(self):
+        return aiEngine(self.clock, self.fruit, self.level, self.lives, self.score, self.nodes, self.pellets, self.ghosts)
 
 if __name__ == "__main__":
     gameMode = str(sys.argv[1])

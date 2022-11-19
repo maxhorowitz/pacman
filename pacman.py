@@ -27,31 +27,13 @@ class Pacman(Entity):
         self.alive = False
         self.direction = STOP
 
-    def update(self, dt):	
+    def update(self, dt, bestDirection):	
         self.sprites.update(dt)
         self.position += self.directions[self.direction]*self.speed*dt
-        direction = self.getValidKey()
-        if self.overshotTarget():
-            self.node = self.target
-            if self.node.neighbors[PORTAL] is not None:
-                self.node = self.node.neighbors[PORTAL]
-            self.target = self.getNewTarget(direction)
-            if self.target is not self.node:
-                self.direction = direction
-            else:
-                self.target = self.getNewTarget(self.direction)
-
-            if self.target is self.node:
-                self.direction = STOP
-            self.setPosition()
-        else: 
-            if self.oppositeDirection(direction):
-                self.reverseDirection()
-
-    def updateAi(self, dt, aiBestDirection):	
-        self.sprites.update(dt)
-        self.position += self.directions[self.direction]*self.speed*dt
-        direction = aiBestDirection
+        if bestDirection is None:
+            direction = self.getValidKey()
+        else:
+            direction = bestDirection
         if self.overshotTarget():
             self.node = self.target
             if self.node.neighbors[PORTAL] is not None:
