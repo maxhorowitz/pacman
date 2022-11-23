@@ -16,15 +16,9 @@ class GameState(object):
         self._id = randint(1000000000, 9999999999)
         self.clock = clock
         self.pacman = pacman
-        self.fruit = fruit
         self.level = level
         self.lives = lives
         self.score = score
-        self.nodes = nodes
-        self.pellets = pellets
-        self.ghosts = ghosts
-        self.fruitCaptured = fruitCaptured
-        self.mazedata = mazedata
 
     def checkPelletEvents(self):
         pellet = self.pacman.eatPellets(self.pellets.pelletList)
@@ -54,20 +48,6 @@ class GameState(object):
         successors = []
         successor = None
         for move in moves:
-            # if move == PORTAL:
-            #     if self.pacman.overshotTarget():
-            #         self.pacman.node = self.pacman.target
-            #         if self.pacman.node.neighbors[PORTAL] is not None:
-            #             self.pacman.node = self.pacman.node.neighbors[PORTAL]
-            #         # self.pacman.target = self.pacman.getNewTarget(direction)
-            #         # if self.pacman.target is not self.pacman.node:
-            #         #     self.pacman.direction = direction
-            #         # else:
-            #         #     self.pacman.target = self.pacman.getNewTarget(self.pacman.direction)
-            #         # if self.pacman.target is self.pacman.node:
-            #         #     self.pacman.direction = STOP
-            #         self.pacman.setPosition()
-            # else:
             successor = self.update(move)
             successors.append(successor)
         return successors
