@@ -43,7 +43,6 @@ class Pacman(Entity):
                 self.direction = direction
             else:
                 self.target = self.getNewTarget(self.direction)
-
             if self.target is self.node:
                 self.direction = STOP
             self.setPosition()
