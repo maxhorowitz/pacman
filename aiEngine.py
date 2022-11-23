@@ -9,10 +9,11 @@ from pacman import Pacman
 from random import randint
 from math import inf
 
-MAX_DEPTH = 3
+MAX_DEPTH = 2
 
 class GameState(object):
     def __init__(self, clock, pacman, fruit, level, lives, score, nodes, pellets, ghosts, mazedata, fruitCaptured):
+        self._id = randint(1000000000, 9999999999)
         self.clock = clock
         self.pacman = pacman
         self.fruit = fruit
@@ -48,13 +49,28 @@ class GameState(object):
                 self.score += self.fruit.points
     
     def listSuccessorGamestates(self):
-        stop = self.update(STOP)
-        up = self.update(UP)
-        down = self.update(DOWN)
-        left = self.update(LEFT)
-        right = self.update(RIGHT)
-        portal = self.update(PORTAL)
-        return [stop, up, down, left, right, portal]
+        # moves = [STOP, UP, DOWN, LEFT, RIGHT, PORTAL]
+        moves = [STOP, UP, DOWN, LEFT, RIGHT]
+        successors = []
+        successor = None
+        for move in moves:
+            # if move == PORTAL:
+            #     if self.pacman.overshotTarget():
+            #         self.pacman.node = self.pacman.target
+            #         if self.pacman.node.neighbors[PORTAL] is not None:
+            #             self.pacman.node = self.pacman.node.neighbors[PORTAL]
+            #         # self.pacman.target = self.pacman.getNewTarget(direction)
+            #         # if self.pacman.target is not self.pacman.node:
+            #         #     self.pacman.direction = direction
+            #         # else:
+            #         #     self.pacman.target = self.pacman.getNewTarget(self.pacman.direction)
+            #         # if self.pacman.target is self.pacman.node:
+            #         #     self.pacman.direction = STOP
+            #         self.pacman.setPosition()
+            # else:
+            successor = self.update(move)
+            successors.append(successor)
+        return successors
 
     def update(self, direction):
         copy = GameState(self.clock, self.pacman, self.fruit, self.level, self.lives, self.score, self.nodes, self.pellets, self.ghosts, self.mazedata, self.fruitCaptured)
@@ -70,38 +86,37 @@ class GameState(object):
 
 def aiEngine(clock, pacman, fruit, level, lives, score, nodes, pellets, ghosts, mazedata, fruitCaptured):
     current = GameState(clock, pacman, fruit, level, lives, score, nodes, pellets, ghosts, mazedata, fruitCaptured)
-    _, next = minimax(current, 0, True, -inf, inf)
+    h, next = minimax(current, 0, True, -inf, inf)
+    print("Selected gamestate._id", str(next._id), "with value", str(h))
     return next.pacman.direction
 
 def heuristic(gamestate):
-    if gamestate is not None:
-        return randint(-100,100)
-    return 0
+    return gamestate.lives*gamestate.score
 
 def minimax(gamestate, depth, isMaximizingPlayer, alpha, beta):
     if depth == MAX_DEPTH:
         return heuristic(gamestate), gamestate
     if isMaximizingPlayer:
         bestVal = -inf
-        bestMove = None
+        bestSuccessor = None
         successors = gamestate.listSuccessorGamestates()
         for successorGamestate in successors:
-            value, move = minimax(successorGamestate, depth+1, False, alpha, beta)
+            value, successor = minimax(successorGamestate, depth+1, False, alpha, beta)
             if value > bestVal:
-                bestVal, bestMove = value, move
+                bestVal, bestSuccessor = value, successor
             alpha = max(alpha, bestVal)
             if beta <= alpha:
                 break
-        return bestVal, bestMove
+        return bestVal, bestSuccessor
     else:
         bestVal = inf
-        bestMove = None
+        bestSuccessor = None
         successors = gamestate.listSuccessorGamestates()
         for successorGamestate in successors:
-            value, move = minimax(successorGamestate, depth+1, True, alpha, beta)
+            value, successor = minimax(successorGamestate, depth+1, True, alpha, beta)
             if value < bestVal:
-                bestVal, bestMove = value, move
+                bestVal, bestSuccessor = value, successor
             beta = min(beta, bestVal)
             if beta <= alpha:
                 break
-        return bestVal, bestMove
+        return bestVal, bestSuccessor
