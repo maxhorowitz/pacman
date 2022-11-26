@@ -4,13 +4,18 @@ from vector import Vector2
 from constants import *
 from entity import Entity
 from sprites import PacmanSprites
+from random import choice
+
+def copy(pacman):
+    new = Pacman(pacman.node)
 
 class Pacman(Entity):
     def __init__(self, node):
         Entity.__init__(self, node )
         self.name = PACMAN    
         self.color = YELLOW
-        self.direction = LEFT
+        self.direction = choice([LEFT, RIGHT])
+        self.recentDirection = self.direction
         self.setBetweenNodes(LEFT)
         self.alive = True
         self.sprites = PacmanSprites(self)
@@ -30,6 +35,8 @@ class Pacman(Entity):
     def update(self, dt, bestDirection):	
         self.sprites.update(dt)
         self.position += self.directions[self.direction]*self.speed*dt
+        if self.recentDirection != self.direction:
+            self.recentDirection = self.direction
         if bestDirection is None:
             direction = self.getValidKey()
         else:

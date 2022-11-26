@@ -115,13 +115,8 @@ class GameController(object):
         bestDirection = None
         if self.isAi == True:
             bestDirection = self.ai()
-        # Commented lines were there, but logic doesn't make sense...
-        # if self.pacman.alive:
-        #     if not self.pause.paused:
-        #         self.pacman.update(dt, bestDirection)
-        # else:
-        #     self.pacman.update(dt, bestDirection)
-        self.pacman.update(dt, bestDirection)
+        if self.pacman.alive and not self.pause.paused:
+            self.pacman.update(dt, bestDirection)
 # We added (end)
         if self.flashBG:
             self.flashTimer += dt
@@ -278,7 +273,7 @@ class GameController(object):
     #  ai() returns best direction to move. Options are as follows:
     #  STOP (0), UP (1), DOWN (-1), LEFT (2), RIGHT (-2), PORTAL (3)
     def ai(self):
-        return aiEngine(self.clock, self.pacman, self.fruit, self.level, self.lives, self.score, self.nodes, self.pellets, self.ghosts, self.mazedata, self.fruitCaptured)
+        return aiEngine(self.clock, self.pacman, self.ghosts, self.pellets, self.fruit, self.level, self.lives, self.score)
 
 if __name__ == "__main__":
     gameMode = str(sys.argv[1])
