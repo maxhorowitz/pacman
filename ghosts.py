@@ -6,6 +6,12 @@ from entity import Entity
 from modes import ModeController
 from sprites import GhostSprites
 
+def copy(ghosts):
+    ret = []
+    for ghost in ghosts:
+        ret.append(Ghost(ghost.node))
+    return ret
+
 class Ghost(Entity):
     def __init__(self, node, pacman=None, blinky=None):
         Entity.__init__(self, node)

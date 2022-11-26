@@ -7,7 +7,7 @@ from sprites import PacmanSprites
 from random import choice
 
 def copy(pacman):
-    new = Pacman(pacman.node)
+    return Pacman(pacman.node)
 
 class Pacman(Entity):
     def __init__(self, node):

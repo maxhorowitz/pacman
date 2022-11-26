@@ -1,11 +1,11 @@
 from pacman import Pacman
 from nodes import NodeGroup
 from pellets import PelletGroup
-from ghosts import GhostGroup
+from ghosts import GhostGroup, Ghost, copy
 from fruit import Fruit
 from constants import *
 from entity import Entity
-from pacman import Pacman
+from pacman import Pacman, copy
 
 
 from random import randint, choice
@@ -18,8 +18,8 @@ class Gamestate(object):
     def __init__(self, clock, pacman, ghosts, pellets, fruit, level, lives, score):
         self._id = randint(1000000000, 9999999999)
         self.clock = clock
-        self.pacman = pacman
-        self.ghosts = ghosts
+        self.pacman = copy(pacman)
+        self.ghosts = copy(ghosts)
         self.pellets = pellets
         self.fruit = fruit
         self.level = level
