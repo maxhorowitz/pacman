@@ -3,6 +3,13 @@ from vector import Vector2
 from constants import *
 import numpy as np
 
+def copyPelletGroup(pellets):
+    pg = PelletGroup(None)
+    pg.pelletList = pellets.pelletList
+    pg.powerpellets = pellets.powerpellets
+    pg.numEaten = pellets.numEaten
+    return pg
+
 class Pellet(object):
     def __init__(self, row, column):
         self.name = PELLET
@@ -35,7 +42,6 @@ class PowerPellet(Pellet):
             self.visible = not self.visible
             self.timer = 0
 
-
 class PelletGroup(object):
     def __init__(self, pelletfile):
         self.pelletList = []
@@ -48,15 +54,16 @@ class PelletGroup(object):
             powerpellet.update(dt)
                 
     def createPelletList(self, pelletfile):
-        data = self.readPelletfile(pelletfile)        
-        for row in range(data.shape[0]):
-            for col in range(data.shape[1]):
-                if data[row][col] in ['.', '+']:
-                    self.pelletList.append(Pellet(row, col))
-                elif data[row][col] in ['P', 'p']:
-                    pp = PowerPellet(row, col)
-                    self.pelletList.append(pp)
-                    self.powerpellets.append(pp)
+        if pelletfile is not None:
+            data = self.readPelletfile(pelletfile)        
+            for row in range(data.shape[0]):
+                for col in range(data.shape[1]):
+                    if data[row][col] in ['.', '+']:
+                        self.pelletList.append(Pellet(row, col))
+                    elif data[row][col] in ['P', 'p']:
+                        pp = PowerPellet(row, col)
+                        self.pelletList.append(pp)
+                        self.powerpellets.append(pp)
                     
     def readPelletfile(self, textfile):
         return np.loadtxt(textfile, dtype='<U1')

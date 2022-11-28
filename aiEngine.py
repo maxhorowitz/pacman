@@ -1,26 +1,27 @@
 from pacman import Pacman
 from nodes import NodeGroup
-from pellets import PelletGroup
-from ghosts import GhostGroup, Ghost, copy
+from pellets import PelletGroup, copyPelletGroup
+from ghosts import GhostGroup, Ghost, copyGhostGroup
 from fruit import Fruit
 from constants import *
 from entity import Entity
-from pacman import Pacman, copy
+from pacman import Pacman, copyPacman
 
 
 from random import randint, choice
 from math import inf
 
-MAX_DEPTH = 2
+MAX_DEPTH = 3
+MOVES_AHEAD = 5
 DEBUG = True
 
 class Gamestate(object):
     def __init__(self, clock, pacman, ghosts, pellets, fruit, level, lives, score):
-        self._id = randint(1000000000, 9999999999)
+        self._id = randint(0000000, 9999999)
         self.clock = clock
-        self.pacman = copy(pacman)
-        self.ghosts = copy(ghosts)
-        self.pellets = pellets
+        self.pacman = copyPacman(pacman)
+        self.ghosts = copyGhostGroup(ghosts, self.pacman)
+        self.pellets = copyPelletGroup(pellets)
         self.fruit = fruit
         self.level = level
         self.lives = lives
@@ -97,7 +98,7 @@ class Gamestate(object):
                 self.score += self.fruit.points
 
     def nextGamestate(self, pacmanDirection):
-        # assert pacmanDirection in self.pacman.validDirections()
+        assert pacmanDirection in self.pacman.validDirections()
         dt = self.clock.tick(30) / 1000.0
         copy = Gamestate(self.clock, self.pacman, self.ghosts, self.pellets, self.fruit, self.level, self.lives, self.score)
         copy.movePacman(dt, pacmanDirection)
@@ -112,36 +113,46 @@ class Gamestate(object):
         successor = None
         for direction in self.pacman.validDirections():
             successor = self.nextGamestate(direction)
+            for i in range(0, MOVES_AHEAD):
+                successor = successor.nextGamestate(direction)
             successors.append(successor)
         return successors
 
     def heuristic(self):
-        return self.lives*self.score
+        h = self.lives*self.score
+        h += self.pellets.numEaten
+        return h
+
+    def about(self):
+        message = "Gamestate "+str(self.id())+" with value "+str(self.heuristic())+" direction "+str(self.pacman.direction)+" recent-dir "+str(self.pacman.prevFrameDirection)+" can move "+str(self.pacman.validDirections())
+        debug(str(message))
 
 def aiEngine(clock, pacman, ghosts, pellets, fruit, level, lives, score):
     ret = None
-    gamestate = Gamestate(clock, pacman, ghosts, pellets, fruit, level, lives, score)
+    while pacman.alive:
+        gamestate = Gamestate(clock, pacman, ghosts, pellets, fruit, level, lives, score)
 
-    # ----------- MINIMAX -----------
-    ret = minimax_helper(gamestate)
+        # ----------- MINIMAX -----------
+        # ret = minimax_helper(gamestate)
 
-    # ----------- RANDOM ------------
-    # ret = random(gamestate)
+        # ----------- RANDOM ------------
+        # ret = random(gamestate)
 
-    # ------- NO TURNING BACK -------
-    # ret = noTurningBack(gamestate)
+        # ------- NO TURNING BACK -------
+        ret = noTurningBack(gamestate)
 
-    # ----------- GREEDY ------------
-    # ret = greedy(gamestate)
-    return ret
+        # ----------- GREEDY ------------
+        # ret = greedy(gamestate)
+        return ret
+    return STOP
 
 # ---------------------------
 # --------- MINIMAX ---------
 # ---------------------------
 
 def minimax_helper(current):
-    h, next = minimax(current, 0, True, -inf, inf)
-    print("Selected gamestate id", str(next.id()), "with value", str(h))
+    _, next = minimax(current, 0, True, -inf, inf)
+    next.about()
     return next.pacman.direction
 
 def minimax(gamestate, depth, isMaximizingPlayer, alpha, beta):
@@ -190,11 +201,11 @@ def random(current):
 # ------------------------------
 
 def noTurningBack(current):
-    recentDirection = current.pacman.recentDirection
+    prevFrameDirection = current.pacman.prevFrameDirection
     while current.pacman.alive:
         validDirections = current.pacman.validDirections()
         try:
-            validDirections.remove(recentDirection * -1)
+            validDirections.remove(prevFrameDirection * -1)
         except ValueError:
             pass
         return choice(validDirections)
@@ -211,12 +222,13 @@ def greedy(current):
         if successor.heuristic() > max:
             max = successor.heuristic()
             bestSuccessorGamestate = successor
-            message = "Gamestate",successor.id(),"with value",max
-            debug(message)
+    bestSuccessorGamestate.about()
     return bestSuccessorGamestate.pacman.direction
 
-
+# ------------------------------
 # ---- DEBUG CONSOLE OUTPUT ----
+# ------------------------------
+
 def debug(message):
     if DEBUG:
         print(message)

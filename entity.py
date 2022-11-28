@@ -100,7 +100,8 @@ class Entity(object):
         self.node = node
         self.startNode = node
         self.target = node
-        self.setPosition()
+        if node is not None:
+            self.setPosition()
 
     def setBetweenNodes(self, direction):
         if self.node.neighbors[direction] is not None:
