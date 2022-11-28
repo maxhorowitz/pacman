@@ -139,10 +139,10 @@ def aiEngine(clock, pacman, ghosts, pellets, fruit, level, lives, score):
         # ret = random(gamestate)
 
         # ------- NO TURNING BACK -------
-        ret = noTurningBack(gamestate)
+        # ret = noTurningBack(gamestate)
 
         # ----------- GREEDY ------------
-        # ret = greedy(gamestate)
+        ret = greedy(gamestate)
         return ret
     return STOP
 
@@ -204,10 +204,11 @@ def noTurningBack(current):
     prevFrameDirection = current.pacman.prevFrameDirection
     while current.pacman.alive:
         validDirections = current.pacman.validDirections()
-        try:
-            validDirections.remove(prevFrameDirection * -1)
-        except ValueError:
-            pass
+        if prevFrameDirection is not None:
+            try:
+                validDirections.remove(prevFrameDirection * -1)
+            except ValueError:
+                pass
         return choice(validDirections)
 
 # ------------------------------

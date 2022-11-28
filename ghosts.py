@@ -8,12 +8,16 @@ from sprites import GhostSprites
 
 def copyGhostGroup(ghosts, pacman):
     blinky = Blinky(ghosts.blinky.node, pacman)
+    blinky.mode.current = CHASE
     blinky.sprites = None
     pinky = Pinky(ghosts.pinky.node, pacman)
+    pinky.mode.current = CHASE
     pinky.sprites = None
     inky = Inky(ghosts.inky.node, pacman, blinky)
+    inky.mode.current = CHASE
     inky.sprites = None
     clyde = Clyde(ghosts.clyde.node, pacman)
+    clyde.mode.current = CHASE
     clyde.sprites = None
     gs = GhostGroup(None, pacman)
     gs.blinky = blinky
