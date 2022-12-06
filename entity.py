@@ -3,6 +3,7 @@ from pygame.locals import *
 from vector import Vector2
 from constants import *
 from random import randint
+from nodes import Node
 
 class Entity(object):
     def __init__(self, node):
@@ -79,6 +80,17 @@ class Entity(object):
         directions = []
         for key in [UP, DOWN, LEFT, RIGHT]:
             if self.validDirection(key):
+                if key != self.direction * -1:
+                    directions.append(key)
+        if len(directions) == 0:
+            directions.append(self.direction * -1)
+        return directions
+
+    def validDirectionsByPos(self, position):
+        directions = []
+        for key in [UP, DOWN, LEFT, RIGHT]:
+            n = Node(position.x, position.y)
+            if self.name in n.access[key] and n.neighbors[key] is not None:
                 if key != self.direction * -1:
                     directions.append(key)
         if len(directions) == 0:

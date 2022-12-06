@@ -90,3 +90,11 @@ class Pacman(Entity):
         if dSquared <= rSquared:
             return True
         return False
+
+    def simulationPacmanCollideWithPelletsCheck(self, position, pelletList):
+        for pellet in pelletList:
+            dSquared = (position - pellet.position).magnitudeSquared()
+            rSquared = (self.collideRadius + pellet.collideRadius)**2
+            if dSquared <= rSquared:
+                return pellet
+        return None

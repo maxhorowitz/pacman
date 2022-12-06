@@ -1,10 +1,10 @@
 import pygame
 from pygame.locals import *
 from constants import *
-from pacman import Pacman
+from pacman import Pacman, copyPacman
 from nodes import NodeGroup
-from pellets import PelletGroup
-from ghosts import GhostGroup
+from pellets import PelletGroup, copyPelletGroup
+from ghosts import GhostGroup, copyGhostGroup
 from fruit import Fruit
 from pauser import Pause
 from text import TextGroup
@@ -12,8 +12,68 @@ from sprites import LifeSprites
 from sprites import MazeSprites
 from mazedata import MazeData
 import sys
+import random
+from math import inf
 
-from aiEngine import aiEngine
+PACMAN_AGENT = 0
+BLINKY_AGENT = 1
+PINKY_AGENT = 2
+INKY_AGENT = 3
+CLYDE_AGENT = 4
+
+MAX_DEPTH = 3
+DEBUG = True
+
+def debug(message):
+    if DEBUG:
+        print(message)
+
+class Gamestate:
+    def __init__(self, dt, pacmanPosition, validActionsList, ghostPositions, fruitPositions, pelletPositions):
+        self.dt = dt
+        self.pacmanPosition = pacmanPosition
+        self.ghostPositions = ghostPositions
+        self.fruitPositions = fruitPositions
+        self.pelletPositions = pelletPositions
+        self.validActionsList = validActionsList
+        self._id = random.randint(0,9999999)
+    
+    def getDt(self):
+        return self.dt
+
+    def setDt(self, dt):
+        self.dt = dt
+    
+    def getPacmanPosition(self):
+        return self.pacmanPosition
+
+    def setPacmanPosition(self, pacmanPosition):
+        self.pacmanPosition = pacmanPosition
+
+    def getGhostPositions(self):
+        return self.ghostPositions
+
+    def modifyGhostPositions(self, agent, agentValidPosition):
+        self.ghostPositions[agent] = agentValidPosition
+
+    def getFruitPositions(self):
+        return self.fruitPositions
+
+    def setFruitPositions(self, fruitPositions):
+        self.fruitPositions = fruitPositions
+
+    def getPelletPositions(self):
+        return self.pelletPositions
+
+    def modifyPelletPositions(self, pellet):
+        if pellet is not None:
+            self.pelletPositions.remove(pellet)
+
+    def getValidActionsList(self):
+        return self.validActionsList
+
+    def modifyValidActionsList(self, agent, agentValidActions):
+        self.validActionsList[agent] = agentValidActions
 
 class GameController(object):
     def __init__(self, isAi):
@@ -37,6 +97,11 @@ class GameController(object):
         self.fruitNode = None
         self.mazedata = MazeData()
         self.isAi = (isAi == "ai")
+        self.minimaxDepth = 2 if self.isAi else None
+        self._hash = random.randint(0000000, 9999999)
+
+    def getHash(self):
+        return self._hash
 
     def setBackground(self):
         self.background_norm = pygame.surface.Surface(SCREENSIZE).convert()
@@ -113,9 +178,9 @@ class GameController(object):
             self.checkFruitEvents()
 # We added (begin)
         bestDirection = None
-        if self.isAi == True:
-            bestDirection = self.ai()
         if self.pacman.alive and not self.pause.paused:
+            if self.isAi == True:
+                bestDirection = self.ai(dt)
             self.pacman.update(dt, bestDirection)
 # We added (end)
         if self.flashBG:
@@ -147,7 +212,6 @@ class GameController(object):
                         else:
                             self.textgroup.showText(PAUSETXT)
                             #self.hideEntities()
-
     def checkPelletEvents(self):
         pellet = self.pacman.eatPellets(self.pellets.pelletList)
         if pellet:
@@ -270,14 +334,60 @@ class GameController(object):
 
         pygame.display.update()
 
-    #  ai() returns best direction to move. Options are as follows:
-    #  STOP (0), UP (1), DOWN (-1), LEFT (2), RIGHT (-2), PORTAL (3)
-    def ai(self):
-        return aiEngine(self.clock, self.pacman, self.ghosts, self.pellets, self.fruit, self.level, self.lives, self.score)
+    def initializeGamestate(self, dt):
+        pacmanPosition = self.pacman.position
+        ghostPositions = []
+        fruitPositions = []
+        pelletPositions = []
+        validActionsList = [self.pacman.validDirections(),]
+        for ghost in self.ghosts.ghosts:
+            validActionsList.append(ghost.validDirections())
+            ghostPositions.append(ghost.position)
+        for pellet in self.pellets.pelletList:
+            pelletPositions.append(pellet)
+        if self.fruit is not None:
+            for fruit in self.fruit:
+                fruitPositions.append(fruit.position)
+        return Gamestate(dt, pacmanPosition, ghostPositions, fruitPositions, pelletPositions, validActionsList)
+
+    def successorGamestate(self, gs, agent, agentBestDirection):
+        if agent == PACMAN_AGENT:
+            gs.modifyPacmanPosition(gs.getPacmanPosition()+self.directions[agentBestDirection]*self.pacman.speed*gs.getDt())
+            gs.modifyValidActionsList(agent, self.pacman.validDirectionsByPos(gs.getPacmanPosition()))
+            gs.modifyPelletPositions(self.pacman.simulationPacmanCollideWithPelletsCheck(gs.getPacmanPosition(), gs.getPelletPositions()))
+        elif agent in [BLINKY_AGENT, PINKY_AGENT, INKY_AGENT, CLYDE_AGENT]:
+            ghost = self.ghosts.ghosts[agent]
+            gs.modifyGhostPositions(agent,(gs.getGhostPositions[agent-1]+self.directions[agentBestDirection]*ghost.speed*gs.getDt()))
+            gs.modifyValidActionsList(agent, ghost.validDirectionsByPos(gs.getGhostPositions()[agent]))
+        else:
+            raise Exception("Cannot produce gamestate while maximizing for agent "+str(agent))
+        return gs
+
+    def ai(self, dt):
+        gs = self.initializeGamestate(dt)
+        return self._minimax(gs)
+
+    def heuristic(self, gs):
+        debug(str(gs._id))
+        return random.randint(0,100)
+
+    def minimax(self, gs):
+        return (self.minimax(gs, 0, True, -inf, inf))[1]
+
+    def _minimax(self, gs, depth, agent, alpha, beta):
+
+        if depth == MAX_DEPTH:
+            return self.heuristic(gs), None
+
+        bestVal, bestAction = None, None
+
+        if agent == PACMAN_AGENT:
+            pass
+
+        return bestVal, bestAction
 
 if __name__ == "__main__":
     gameMode = str(sys.argv[1])
-    print(gameMode)
     game = GameController(gameMode)
     game.startGame()
     while True:
