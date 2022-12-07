@@ -6,6 +6,27 @@ from entity import Entity
 from modes import ModeController
 from sprites import GhostSprites
 
+def copyGhostGroup(ghosts, pacman):
+    blinky = Blinky(ghosts.blinky.node, pacman)
+    blinky.mode.current = CHASE
+    blinky.sprites = None
+    pinky = Pinky(ghosts.pinky.node, pacman)
+    pinky.mode.current = CHASE
+    pinky.sprites = None
+    inky = Inky(ghosts.inky.node, pacman, blinky)
+    inky.mode.current = CHASE
+    inky.sprites = None
+    clyde = Clyde(ghosts.clyde.node, pacman)
+    clyde.mode.current = CHASE
+    clyde.sprites = None
+    gs = GhostGroup(None, pacman)
+    gs.blinky = blinky
+    gs.pinky = pinky
+    gs.inky = inky
+    gs.clyde = clyde
+    gs.ghosts = [gs.blinky, gs.pinky, gs.inky, gs.clyde]
+    return gs
+
 class Ghost(Entity):
     def __init__(self, node, pacman=None, blinky=None):
         Entity.__init__(self, node)
