@@ -21,7 +21,7 @@ PINKY_AGENT = 2
 INKY_AGENT = 3
 CLYDE_AGENT = 4
 
-MAX_DEPTH = 3
+MAX_DEPTH = 2
 DEBUG = True
 
 def debug(message):
@@ -29,7 +29,7 @@ def debug(message):
         print(message)
 
 class Gamestate:
-    def __init__(self, dt, pacmanPosition, validActionsList, ghostPositions, fruitPositions, pelletPositions):
+    def __init__(self, dt, pacmanPosition, ghostPositions, fruitPositions, pelletPositions, validActionsList):
         self.dt = dt
         self.pacmanPosition = pacmanPosition
         self.ghostPositions = ghostPositions
@@ -47,7 +47,7 @@ class Gamestate:
     def getPacmanPosition(self):
         return self.pacmanPosition
 
-    def setPacmanPosition(self, pacmanPosition):
+    def modifyPacmanPosition(self, pacmanPosition):
         self.pacmanPosition = pacmanPosition
 
     def getGhostPositions(self):
@@ -181,6 +181,8 @@ class GameController(object):
         if self.pacman.alive and not self.pause.paused:
             if self.isAi == True:
                 bestDirection = self.ai(dt)
+            self.pacman.update(dt, bestDirection)
+        else:
             self.pacman.update(dt, bestDirection)
 # We added (end)
         if self.flashBG:
@@ -350,39 +352,148 @@ class GameController(object):
                 fruitPositions.append(fruit.position)
         return Gamestate(dt, pacmanPosition, ghostPositions, fruitPositions, pelletPositions, validActionsList)
 
-    def successorGamestate(self, gs, agent, agentBestDirection):
+    def successorGamestate(self, gs, agent, agentDirection):
+        next = Gamestate(gs.dt, gs.pacmanPosition, gs.ghostPositions, gs.fruitPositions, gs.pelletPositions, gs.validActionsList)
         if agent == PACMAN_AGENT:
-            gs.modifyPacmanPosition(gs.getPacmanPosition()+self.directions[agentBestDirection]*self.pacman.speed*gs.getDt())
-            gs.modifyValidActionsList(agent, self.pacman.validDirectionsByPos(gs.getPacmanPosition()))
-            gs.modifyPelletPositions(self.pacman.simulationPacmanCollideWithPelletsCheck(gs.getPacmanPosition(), gs.getPelletPositions()))
+            next.modifyPacmanPosition(next.getPacmanPosition()+self.pacman.directions[agentDirection]*self.pacman.speed*next.getDt())
+            next.modifyValidActionsList(agent, self.pacman.validDirectionsByPos(next.getPacmanPosition()))
+            next.modifyPelletPositions(self.pacman.simulationPacmanCollideWithPelletsCheck(next.getPacmanPosition(), next.getPelletPositions()))
         elif agent in [BLINKY_AGENT, PINKY_AGENT, INKY_AGENT, CLYDE_AGENT]:
-            ghost = self.ghosts.ghosts[agent]
-            gs.modifyGhostPositions(agent,(gs.getGhostPositions[agent-1]+self.directions[agentBestDirection]*ghost.speed*gs.getDt()))
-            gs.modifyValidActionsList(agent, ghost.validDirectionsByPos(gs.getGhostPositions()[agent]))
+            ghost = self.ghosts.ghosts[agent-1]
+            next.modifyGhostPositions(agent-1,(next.getGhostPositions()[agent-1]+ghost.directions[agentDirection]*ghost.speed*next.getDt()))
+            next.modifyValidActionsList(agent, ghost.validDirectionsByPos(next.getGhostPositions()[agent-1]))
         else:
             raise Exception("Cannot produce gamestate while maximizing for agent "+str(agent))
-        return gs
+        return next
 
     def ai(self, dt):
         gs = self.initializeGamestate(dt)
-        return self._minimax(gs)
+        return self.minimax(gs, 0, 0, -inf, inf)[1]
 
     def heuristic(self, gs):
-        debug(str(gs._id))
-        return random.randint(0,100)
 
-    def minimax(self, gs):
-        return (self.minimax(gs, 0, True, -inf, inf))[1]
+        def manhattan(posA, posB):
+            return abs(posA.x - posB.x) + abs(posA.y - posB.y)
 
-    def _minimax(self, gs, depth, agent, alpha, beta):
+        closestGhostImportance = 10
+        def closestGhost(gs):
+            pacmanPos = gs.getPacmanPosition()
+            ghostPositions = gs.getGhostPositions()
+            closestGhost, distanceToClosestGhost = None, None
+            for i in range(0, len(ghostPositions)):
+                d = manhattan(pacmanPos, ghostPositions[i])
+                if closestGhost is None or distanceToClosestGhost > d:
+                    closestGhost = (i+1)
+                    distanceToClosestGhost = d
+            return closestGhost, distanceToClosestGhost
+
+        proximityToPelletsImportance = 7.5
+        def proximityToPellets(gs):
+            pacmanPos = gs.getPacmanPosition()
+            pelletPositions = gs.getPelletPositions()
+            proximity = 0
+            for pellet in pelletPositions:
+                d = manhattan(pacmanPos, pellet.position)
+                if d < 5:
+                    proximity += (100 / d)
+                elif d < 10:
+                    proximity += (50 / d)
+                elif d < 25:
+                    proximity += (20 / d)
+                elif d < 50:
+                    proximity += (10 / d)
+                elif d < 75:
+                    proximity += (6.67 / d)
+                elif d < 100:
+                    proximity += (5 / d)
+            return proximity
+
+        evalGamestate = 0
+        evalGamestate += (-1) * (closestGhost(gs)[1]) * closestGhostImportance
+        evalGamestate += (proximityToPellets(gs)) * proximityToPelletsImportance
+        return evalGamestate
+
+    def _minimax_debug(self, gs, depth, agent, alpha, beta):
+        if DEBUG:
+            print("\n-------- GS: "+str(gs._id)+" --------")
+            if agent == PACMAN_AGENT:
+                pacPos = str(gs.getPacmanPosition())
+                print("@@ pacman @@")
+                print("Maximizing for pacman at position="+pacPos)
+            elif agent == BLINKY_AGENT:
+                blinkyPos = str(gs.getGhostPositions()[agent-1])
+                print("@@ blinky @@")
+                print("Minimizing for blinky at position="+blinkyPos)
+            elif agent == PINKY_AGENT:
+                pinkyPos = str(gs.getGhostPositions()[agent-1])
+                print("@@ pinky @@")
+                print("Minimizing for pinky at position="+pinkyPos)
+            elif agent == INKY_AGENT:
+                inkyPos = str(gs.getGhostPositions()[agent-1])
+                print("@@ inky @@")
+                print("Minimizing for inky at position="+inkyPos)
+            elif agent == CLYDE_AGENT:
+                clydePos = str(gs.getGhostPositions()[agent-1])
+                print("@@ clyde @@")
+                print("Minimizing for clyde at position="+clydePos)
+            else:
+                raise Exception("This should not happen.")
+            print("Minimax info: depth="+str(depth)+", alpha="+str(alpha)+", beta="+str(beta))
+            print("-------- GS: "+str(gs._id)+" --------\n")
+
+    def minimax(self, gs, depth, agent, alpha, beta):
+
+        if agent == 5:
+            agent = 0
+
+        self._minimax_debug(gs, depth, agent, alpha, beta)
 
         if depth == MAX_DEPTH:
+
+            h = self.heuristic(gs)
+            debug(h)
             return self.heuristic(gs), None
 
         bestVal, bestAction = None, None
 
         if agent == PACMAN_AGENT:
-            pass
+
+            for action in gs.getValidActionsList()[agent]:
+                
+                next_gs = self.successorGamestate(gs, agent, action)
+
+                val, _ = self.minimax(next_gs, depth+1, agent+1, alpha, beta)
+
+                if bestVal is None or val > bestVal:
+                    bestVal, bestAction = val, action
+
+                alpha = max(alpha, val)
+
+                if beta < alpha:
+                    break
+
+        elif agent in [BLINKY_AGENT, PINKY_AGENT, INKY_AGENT, CLYDE_AGENT]:
+
+            for action in gs.getValidActionsList()[agent]:
+
+                next_gs = self.successorGamestate(gs, agent, action)
+
+                val, _ = self.minimax(next_gs, depth+1, agent+1, alpha, beta)
+
+                if  bestVal is None or val < bestVal:
+                    bestVal, bestAction = val, action
+
+                beta = min(beta, val)
+
+                if beta < alpha:
+                    break
+
+        else:
+
+            raise Exception("This shouldn't happen!")
+
+        if bestVal is None:
+            return self.heuristic(gs), None
 
         return bestVal, bestAction
 
