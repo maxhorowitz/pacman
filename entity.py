@@ -76,6 +76,9 @@ class Entity(object):
                 return True
         return False
 
+    def customPosition(self, position, direction, dt):
+        return position + self.directions[direction] * self.speed * dt
+
     def validDirections(self):
         directions = []
         for key in [UP, DOWN, LEFT, RIGHT]:
@@ -86,13 +89,14 @@ class Entity(object):
             directions.append(self.direction * -1)
         return directions
 
-    def validDirectionsByPos(self, position):
+    def validDirectionsBySimulatedPosition(self, position):
         directions = []
         for key in [UP, DOWN, LEFT, RIGHT]:
             n = Node(position.x, position.y)
-            if self.name in n.access[key] and n.neighbors[key] is not None:
-                if key != self.direction * -1:
-                    directions.append(key)
+            if self.name in n.access[key]:
+                if n.neighbors[key] is not None:
+                    if key != self.direction * -1:
+                        directions.append(key)
         if len(directions) == 0:
             directions.append(self.direction * -1)
         return directions

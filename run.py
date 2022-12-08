@@ -1,10 +1,10 @@
 import pygame
 from pygame.locals import *
 from constants import *
-from pacman import Pacman, copyPacman
+from pacman import Pacman
 from nodes import NodeGroup
-from pellets import PelletGroup, copyPelletGroup
-from ghosts import GhostGroup, copyGhostGroup
+from pellets import PelletGroup
+from ghosts import GhostGroup
 from fruit import Fruit
 from pauser import Pause
 from text import TextGroup
@@ -21,7 +21,31 @@ PINKY_AGENT = 2
 INKY_AGENT = 3
 CLYDE_AGENT = 4
 
-MAX_DEPTH = 2
+ghost_modedict = {
+    SCATTER : "scatter",
+    CHASE : "chase",
+    FREIGHT : "freight",
+    SPAWN : "spawn",
+}
+
+agentdict = {
+    PACMAN_AGENT:"pacman",
+    BLINKY_AGENT: "blinky",
+    PINKY_AGENT: "pinky",
+    INKY_AGENT: "inky",
+    CLYDE_AGENT: "clyde",
+}
+
+directiondict = {
+    STOP:"stop",
+    UP:"up",
+    DOWN:"down",
+    LEFT:"left",
+    RIGHT:"right",
+    PORTAL:"portal",
+}
+
+MAX_DEPTH = 5
 DEBUG = True
 
 def debug(message):
@@ -29,15 +53,29 @@ def debug(message):
         print(message)
 
 class Gamestate:
-    def __init__(self, dt, pacmanPosition, ghostPositions, fruitPositions, pelletPositions, validActionsList):
+    def __init__(self, dt, pacmanPosition, ghostPositions, pelletPositions, validActionsList):
         self.dt = dt
         self.pacmanPosition = pacmanPosition
         self.ghostPositions = ghostPositions
-        self.fruitPositions = fruitPositions
         self.pelletPositions = pelletPositions
         self.validActionsList = validActionsList
         self._id = random.randint(0,9999999)
-    
+
+    def printGamestate(self):
+        print("\n--------"+str(self._id)+"--------")
+        print()
+        print(self.dt)
+        print()
+        print(self.pacmanPosition)
+        print()
+        print(self.ghostPositions)
+        print()
+        print(self.pelletPositions)
+        print()
+        print(self.validActionsList)
+        print()
+        print("--------"+str(self._id)+"--------\n")
+
     def getDt(self):
         return self.dt
 
@@ -55,12 +93,6 @@ class Gamestate:
 
     def modifyGhostPositions(self, agent, agentValidPosition):
         self.ghostPositions[agent] = agentValidPosition
-
-    def getFruitPositions(self):
-        return self.fruitPositions
-
-    def setFruitPositions(self, fruitPositions):
-        self.fruitPositions = fruitPositions
 
     def getPelletPositions(self):
         return self.pelletPositions
@@ -176,15 +208,14 @@ class GameController(object):
             self.checkPelletEvents()
             self.checkGhostEvents()
             self.checkFruitEvents()
-# We added (begin)
         bestDirection = None
-        if self.pacman.alive and not self.pause.paused:
-            if self.isAi == True:
-                bestDirection = self.ai(dt)
-            self.pacman.update(dt, bestDirection)
+        if self.pacman.alive:
+            if not self.pause.paused:
+                if self.isAi == True:
+                    bestDirection = self.ai(dt)
+                self.pacman.update(dt, bestDirection)
         else:
             self.pacman.update(dt, bestDirection)
-# We added (end)
         if self.flashBG:
             self.flashTimer += dt
             if self.flashTimer >= self.flashTime:
@@ -339,7 +370,6 @@ class GameController(object):
     def initializeGamestate(self, dt):
         pacmanPosition = self.pacman.position
         ghostPositions = []
-        fruitPositions = []
         pelletPositions = []
         validActionsList = [self.pacman.validDirections(),]
         for ghost in self.ghosts.ghosts:
@@ -347,24 +377,37 @@ class GameController(object):
             ghostPositions.append(ghost.position)
         for pellet in self.pellets.pelletList:
             pelletPositions.append(pellet)
-        if self.fruit is not None:
-            for fruit in self.fruit:
-                fruitPositions.append(fruit.position)
-        return Gamestate(dt, pacmanPosition, ghostPositions, fruitPositions, pelletPositions, validActionsList)
+        for powerpellet in self.pellets.powerpellets:
+            pelletPositions.append(powerpellet)
+        return Gamestate(dt, pacmanPosition, ghostPositions, pelletPositions, validActionsList)
 
     def successorGamestate(self, gs, agent, agentDirection):
-        next = Gamestate(gs.dt, gs.pacmanPosition, gs.ghostPositions, gs.fruitPositions, gs.pelletPositions, gs.validActionsList)
+
         if agent == PACMAN_AGENT:
-            next.modifyPacmanPosition(next.getPacmanPosition()+self.pacman.directions[agentDirection]*self.pacman.speed*next.getDt())
-            next.modifyValidActionsList(agent, self.pacman.validDirectionsByPos(next.getPacmanPosition()))
-            next.modifyPelletPositions(self.pacman.simulationPacmanCollideWithPelletsCheck(next.getPacmanPosition(), next.getPelletPositions()))
+            # modify pacman position
+            customPosition = self.pacman.customPosition(gs.getPacmanPosition(), agentDirection, gs.getDt())
+            gs.modifyPacmanPosition(customPosition)
+
+            # modify the valid actions list
+            validDirectionsFromCustomPosition = self.pacman.validDirectionsBySimulatedPosition(customPosition)
+            gs.modifyValidActionsList(agent, validDirectionsFromCustomPosition)
+
+            # modify pellet positions if pacman ate any of them
+            gs.modifyPelletPositions(self.pacman.simulationPacmanCollideWithPelletsCheck(gs.getPacmanPosition(), gs.getPelletPositions()))
+
         elif agent in [BLINKY_AGENT, PINKY_AGENT, INKY_AGENT, CLYDE_AGENT]:
             ghost = self.ghosts.ghosts[agent-1]
-            next.modifyGhostPositions(agent-1,(next.getGhostPositions()[agent-1]+ghost.directions[agentDirection]*ghost.speed*next.getDt()))
-            next.modifyValidActionsList(agent, ghost.validDirectionsByPos(next.getGhostPositions()[agent-1]))
+
+            # modify ghost position
+            customPosition = ghost.customPosition(ghost.position, agentDirection, gs.getDt())
+            gs.modifyGhostPositions(agent-1,customPosition)
+
+            # modify the valid actions list
+            validDirectionsFromCustomPosition = ghost.validDirectionsBySimulatedPosition(customPosition)
+            gs.modifyValidActionsList(agent, validDirectionsFromCustomPosition)
         else:
-            raise Exception("Cannot produce gamestate while maximizing for agent "+str(agent))
-        return next
+            raise Exception("Agent index out of bounds!")
+        return gs
 
     def ai(self, dt):
         gs = self.initializeGamestate(dt)
@@ -375,7 +418,11 @@ class GameController(object):
         def manhattan(posA, posB):
             return abs(posA.x - posB.x) + abs(posA.y - posB.y)
 
-        closestGhostImportance = 10
+        closestGhostImportance = 1
+        if self.ghosts.ghosts[0].mode.current is FREIGHT:
+            closestGhostImportance *= 100
+        else:
+            closestGhostImportance *= -30
         def closestGhost(gs):
             pacmanPos = gs.getPacmanPosition()
             ghostPositions = gs.getGhostPositions()
@@ -387,29 +434,44 @@ class GameController(object):
                     distanceToClosestGhost = d
             return closestGhost, distanceToClosestGhost
 
-        proximityToPelletsImportance = 7.5
+        proximityToPelletsImportance = 5
         def proximityToPellets(gs):
             pacmanPos = gs.getPacmanPosition()
             pelletPositions = gs.getPelletPositions()
             proximity = 0
             for pellet in pelletPositions:
-                d = manhattan(pacmanPos, pellet.position)
-                if d < 5:
-                    proximity += (100 / d)
-                elif d < 10:
-                    proximity += (50 / d)
-                elif d < 25:
-                    proximity += (20 / d)
-                elif d < 50:
-                    proximity += (10 / d)
-                elif d < 75:
-                    proximity += (6.67 / d)
-                elif d < 100:
-                    proximity += (5 / d)
+                if pellet.name == PELLET:
+                    d = manhattan(pacmanPos, pellet.position)
+                    if d < 5:
+                        proximity += (100 / d)
+                    elif d < 10:
+                        proximity += (50 / d)
+                    elif d < 25:
+                        proximity += (20 / d)
+                    elif d < 50:
+                        proximity += (10 / d)
+                    elif d < 75:
+                        proximity += (6.67 / d)
+                    elif d < 100:
+                        proximity += (5 / d)
+                elif pellet.name == POWERPELLET:
+                    d = manhattan(pacmanPos, pellet.position)
+                    if d < 5:
+                        proximity += 10*(100 / d)
+                    elif d < 10:
+                        proximity += 10*(50 / d)
+                    elif d < 25:
+                        proximity += 10*(20 / d)
+                    elif d < 50:
+                        proximity += 10*(10 / d)
+                    elif d < 75:
+                        proximity += 10*(6.67 / d)
+                    elif d < 100:
+                        proximity += 10*(5 / d)
             return proximity
 
         evalGamestate = 0
-        evalGamestate += (-1) * (closestGhost(gs)[1]) * closestGhostImportance
+        evalGamestate += (closestGhost(gs)[1]) * closestGhostImportance
         evalGamestate += (proximityToPellets(gs)) * proximityToPelletsImportance
         return evalGamestate
 
@@ -441,17 +503,17 @@ class GameController(object):
             print("Minimax info: depth="+str(depth)+", alpha="+str(alpha)+", beta="+str(beta))
             print("-------- GS: "+str(gs._id)+" --------\n")
 
+    def _selection_debug(self, action, val, mode):
+        s = "Move pacman "+directiondict[action]+", with heuristic="+str(val)+", ghosts_mode="+ghost_modedict[mode]
+        debug(str(s))
+
     def minimax(self, gs, depth, agent, alpha, beta):
 
-        if agent == 5:
+        if agent == -1:
+            depth += 1
             agent = 0
 
-        self._minimax_debug(gs, depth, agent, alpha, beta)
-
         if depth == MAX_DEPTH:
-
-            h = self.heuristic(gs)
-            debug(h)
             return self.heuristic(gs), None
 
         bestVal, bestAction = None, None
@@ -462,7 +524,7 @@ class GameController(object):
                 
                 next_gs = self.successorGamestate(gs, agent, action)
 
-                val, _ = self.minimax(next_gs, depth+1, agent+1, alpha, beta)
+                val, _ = self.minimax(next_gs, depth, agent+1, alpha, beta)
 
                 if bestVal is None or val > bestVal:
                     bestVal, bestAction = val, action
@@ -478,7 +540,12 @@ class GameController(object):
 
                 next_gs = self.successorGamestate(gs, agent, action)
 
-                val, _ = self.minimax(next_gs, depth+1, agent+1, alpha, beta)
+                val = None
+                if agent is CLYDE_AGENT:
+                    val, _ = self.minimax(next_gs, depth, -1, alpha, beta)
+                else:
+                    val, _ = self.minimax(next_gs, depth, agent+1, alpha, beta)
+                assert val is not None
 
                 if  bestVal is None or val < bestVal:
                     bestVal, bestAction = val, action
@@ -494,6 +561,8 @@ class GameController(object):
 
         if bestVal is None:
             return self.heuristic(gs), None
+
+        self._selection_debug(bestAction, bestVal, self.ghosts.ghosts[0].mode.current)
 
         return bestVal, bestAction
 

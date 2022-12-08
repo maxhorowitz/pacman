@@ -3,13 +3,6 @@ from vector import Vector2
 from constants import *
 import numpy as np
 
-def copyPelletGroup(pellets):
-    pg = PelletGroup(None)
-    pg.pelletList = pellets.pelletList
-    pg.powerpellets = pellets.powerpellets
-    pg.numEaten = pellets.numEaten
-    return pg
-
 class Pellet(object):
     def __init__(self, row, column):
         self.name = PELLET

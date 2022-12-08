@@ -6,20 +6,12 @@ from entity import Entity
 from sprites import PacmanSprites
 from random import choice
 
-def copyPacman(pacman):
-    p = Pacman(pacman.node)
-    p.direction = pacman.direction
-    p.prevFrameDirection = pacman.prevFrameDirection
-    p.sprites = None
-    return p
-
 class Pacman(Entity):
     def __init__(self, node):
         Entity.__init__(self, node )
         self.name = PACMAN    
         self.color = YELLOW
-        self.direction = choice([LEFT, RIGHT])
-        self.prevFrameDirection = None
+        self.direction = LEFT
         self.setBetweenNodes(LEFT)
         self.alive = True
         self.sprites = PacmanSprites(self)
@@ -38,14 +30,12 @@ class Pacman(Entity):
 
     def update(self, dt, bestDirection):	
         self.sprites.update(dt)
+        self.position += self.directions[self.direction]*self.speed*dt
         direction = None
         if bestDirection is None:
             direction = self.getValidKey()
         else:
             direction = bestDirection
-        self.prevFrameDirection = self.direction
-        self.direction = direction
-        self.position += self.directions[self.direction]*self.speed*dt
         if self.overshotTarget():
             self.node = self.target
             if self.node.neighbors[PORTAL] is not None:
