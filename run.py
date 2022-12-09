@@ -13,7 +13,7 @@ from sprites import MazeSprites
 from mazedata import MazeData
 import sys
 import random
-from math import inf
+from math import inf, sqrt
 
 PACMAN_AGENT = 0
 BLINKY_AGENT = 1
@@ -418,23 +418,26 @@ class GameController(object):
         def manhattan(posA, posB):
             return abs(posA.x - posB.x) + abs(posA.y - posB.y)
 
-        closestGhostImportance = 1
-        if self.ghosts.ghosts[0].mode.current is FREIGHT:
-            closestGhostImportance *= 100
+        mode, closestGhostImportance = self.ghosts.ghosts[0].mode.current, None
+        if mode is FREIGHT:
+            closestGhostImportance = 1000
         else:
-            closestGhostImportance *= -30
+            closestGhostImportance = -1000
         def closestGhost(gs):
             pacmanPos = gs.getPacmanPosition()
             ghostPositions = gs.getGhostPositions()
             closestGhost, distanceToClosestGhost = None, None
+            ghostDistances = []
             for i in range(0, len(ghostPositions)):
                 d = manhattan(pacmanPos, ghostPositions[i])
+                ghostDistances.append(d)
                 if closestGhost is None or distanceToClosestGhost > d:
                     closestGhost = (i+1)
                     distanceToClosestGhost = d
+            # debug(str(ghostDistances))
             return closestGhost, distanceToClosestGhost
 
-        proximityToPelletsImportance = 5
+        proximityToPelletsImportance = 50
         def proximityToPellets(gs):
             pacmanPos = gs.getPacmanPosition()
             pelletPositions = gs.getPelletPositions()
@@ -470,8 +473,17 @@ class GameController(object):
                         proximity += 10*(5 / d)
             return proximity
 
+        cg = closestGhost(gs)[1]
+        if cg < 50:
+            closestGhostImportance *= 100
+        elif 50 <= cg and cg < 100:
+            closestGhostImportance *= 50
+        elif 100 <= cg and cg < 200:
+            closestGhostImportance *= 10
+        else:
+            closestGhostImportance /=5
         evalGamestate = 0
-        evalGamestate += (closestGhost(gs)[1]) * closestGhostImportance
+        evalGamestate += (1/(sqrt(cg))) * closestGhostImportance
         evalGamestate += (proximityToPellets(gs)) * proximityToPelletsImportance
         return evalGamestate
 
@@ -561,8 +573,6 @@ class GameController(object):
 
         if bestVal is None:
             return self.heuristic(gs), None
-
-        self._selection_debug(bestAction, bestVal, self.ghosts.ghosts[0].mode.current)
 
         return bestVal, bestAction
 
