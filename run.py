@@ -45,8 +45,8 @@ directiondict = {
     PORTAL:"portal",
 }
 
-MAX_DEPTH = 5
-DEBUG = True
+MAX_DEPTH = 8
+DEBUG = False
 
 def debug(message):
     if DEBUG:
@@ -420,9 +420,9 @@ class GameController(object):
 
         mode, closestGhostImportance = self.ghosts.ghosts[0].mode.current, None
         if mode is FREIGHT:
-            closestGhostImportance = 1000
+            closestGhostImportance = 10000
         else:
-            closestGhostImportance = -1000
+            closestGhostImportance = -10000
         def closestGhost(gs):
             pacmanPos = gs.getPacmanPosition()
             ghostPositions = gs.getGhostPositions()
@@ -434,7 +434,7 @@ class GameController(object):
                 if closestGhost is None or distanceToClosestGhost > d:
                     closestGhost = (i+1)
                     distanceToClosestGhost = d
-            # debug(str(ghostDistances))
+            debug(str(ghostDistances))
             return closestGhost, distanceToClosestGhost
 
         proximityToPelletsImportance = 50
@@ -448,28 +448,32 @@ class GameController(object):
                     if d < 5:
                         proximity += (100 / d)
                     elif d < 10:
-                        proximity += (50 / d)
+                        proximity += (75 / d)
                     elif d < 25:
-                        proximity += (20 / d)
+                        proximity += (50 / d)
                     elif d < 50:
-                        proximity += (10 / d)
+                        proximity += (20 / d)
                     elif d < 75:
-                        proximity += (6.67 / d)
+                        proximity += (15 / d)
                     elif d < 100:
+                        proximity += (10 / d)
+                    elif d < 200:
                         proximity += (5 / d)
                 elif pellet.name == POWERPELLET:
                     d = manhattan(pacmanPos, pellet.position)
                     if d < 5:
                         proximity += 10*(100 / d)
                     elif d < 10:
-                        proximity += 10*(50 / d)
+                        proximity += 10*(75 / d)
                     elif d < 25:
-                        proximity += 10*(20 / d)
+                        proximity += 10*(50 / d)
                     elif d < 50:
-                        proximity += 10*(10 / d)
+                        proximity += 10*(20 / d)
                     elif d < 75:
-                        proximity += 10*(6.67 / d)
+                        proximity += 10*(15 / d)
                     elif d < 100:
+                        proximity += 10*(10 / d)
+                    elif d < 200:
                         proximity += 10*(5 / d)
             return proximity
 
@@ -479,11 +483,16 @@ class GameController(object):
         elif 50 <= cg and cg < 100:
             closestGhostImportance *= 50
         elif 100 <= cg and cg < 200:
+            closestGhostImportance *= 25
+        elif 200 <= cg and cg < 300:
             closestGhostImportance *= 10
+        elif 300 <= cg and cg < 400:
+            closestGhostImportance *= 5
         else:
-            closestGhostImportance /=5
+            proximityToPelletsImportance *= 10
+            closestGhostImportance = 0
         evalGamestate = 0
-        evalGamestate += (1/(sqrt(cg))) * closestGhostImportance
+        evalGamestate += (1/(sqrt(cg+(.0001)))) * closestGhostImportance
         evalGamestate += (proximityToPellets(gs)) * proximityToPelletsImportance
         return evalGamestate
 
@@ -520,6 +529,8 @@ class GameController(object):
         debug(str(s))
 
     def minimax(self, gs, depth, agent, alpha, beta):
+
+        self._minimax_debug(gs, depth, agent, alpha, beta)
 
         if agent == -1:
             depth += 1
@@ -573,6 +584,8 @@ class GameController(object):
 
         if bestVal is None:
             return self.heuristic(gs), None
+
+        self._selection_debug(bestAction, bestVal, self.ghosts.ghosts[0].mode.current)
 
         return bestVal, bestAction
 
