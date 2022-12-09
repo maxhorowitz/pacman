@@ -45,8 +45,8 @@ directiondict = {
     PORTAL:"portal",
 }
 
-MAX_DEPTH = 8
-DEBUG = False
+MAX_DEPTH = 5
+DEBUG = True
 
 def debug(message):
     if DEBUG:
@@ -529,13 +529,12 @@ class GameController(object):
         debug(str(s))
 
     def minimax(self, gs, depth, agent, alpha, beta):
-
-        self._minimax_debug(gs, depth, agent, alpha, beta)
-
         if agent == -1:
             depth += 1
             agent = 0
 
+        self._minimax_debug(gs, depth, agent, alpha, beta)
+        
         if depth == MAX_DEPTH:
             return self.heuristic(gs), None
 
