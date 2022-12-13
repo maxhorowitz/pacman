@@ -10,6 +10,7 @@ To delete the virtual environment, run `conda env remove -n pacman-env`.
 
 # Gameplay
 To watch the AI engine play on its own, run `make ai`.
+To run a benchmark test of AI engine, run `make benchmark`.
 To play yourself, write `make user`.
 
 # Credits
