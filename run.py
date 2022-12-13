@@ -46,7 +46,7 @@ directiondict = {
 }
 
 MAX_DEPTH = 5
-DEBUG = True
+DEBUG = False
 
 def debug(message):
     if DEBUG:
@@ -108,7 +108,7 @@ class Gamestate:
         self.validActionsList[agent] = agentValidActions
 
 class GameController(object):
-    def __init__(self, isAi):
+    def __init__(self, mode):
         pygame.init()
         self.screen = pygame.display.set_mode(SCREENSIZE, 0, 32)
         self.background = None
@@ -128,7 +128,11 @@ class GameController(object):
         self.fruitCaptured = []
         self.fruitNode = None
         self.mazedata = MazeData()
-        self.isAi = (isAi == "ai")
+        self.isAi = (mode == "ai" or mode == "benchmark")
+        self.isBenchmark = (mode == "benchmark")
+        self.benchmarkCount = None
+        if self.isBenchmark:
+            self.benchmarkCount = 0
         self.minimaxDepth = 2 if self.isAi else None
         self._hash = random.randint(0000000, 9999999)
 
@@ -280,11 +284,20 @@ class GameController(object):
                         self.lifesprites.removeImage()
                         self.pacman.die()               
                         self.ghosts.hide()
-                        if self.lives <= 0:
-                            self.textgroup.showText(GAMEOVERTXT)
-                            self.pause.setPause(pauseTime=3, func=self.restartGame)
+                        if self.isBenchmark:
+                            self.benchmarkCount+=1
+                            print(self.score)
+                            if self.benchmarkCount == 100:
+                                print()
+                                exit()
+                            else:
+                                self.restartGame()
                         else:
-                            self.pause.setPause(pauseTime=3, func=self.resetLevel)
+                            if self.lives <= 0:
+                                self.textgroup.showText(GAMEOVERTXT)
+                                self.pause.setPause(pauseTime=3, func=self.restartGame)
+                            else:
+                                self.pause.setPause(pauseTime=3, func=self.resetLevel)
     
     def checkFruitEvents(self):
         if self.pellets.numEaten == 50 or self.pellets.numEaten == 140:
@@ -594,6 +607,3 @@ if __name__ == "__main__":
     game.startGame()
     while True:
         game.update()
-
-
-
