@@ -15,3 +15,6 @@ user:
 
 ai:
 	python run.py ai
+
+benchmark:
+	python run.py benchmark

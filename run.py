@@ -15,6 +15,8 @@ import sys
 import random
 from math import inf, sqrt
 
+PACMAN_LIVES = 3
+
 PACMAN_AGENT = 0
 BLINKY_AGENT = 1
 PINKY_AGENT = 2
@@ -45,12 +47,33 @@ directiondict = {
     PORTAL:"portal",
 }
 
-MAX_DEPTH = 5
+MAX_DEPTH = 10
 DEBUG = False
 
 def debug(message):
     if DEBUG:
         print(message)
+
+def read_file_and_calculate_average(filepath):
+    # Open the file at the given filepath
+    with open(filepath, 'r') as f:
+        # Initialize a count variable to keep track of the total number of integers
+        count = 0
+        # Initialize a total variable to keep track of the sum of all of the integers
+        total = 0
+        # Read each line of the file
+        line = f.readline()
+        while len(line) > 0:
+            # Cast the line to an integer
+            number = float(line)
+            # Increment the count by 1
+            count += 1
+            # Add the number to the total
+            total += number
+            # Get next line
+            line = f.readline()
+        # Return the average of all of the integers
+        return total / count
 
 class Gamestate:
     def __init__(self, dt, pacmanPosition, ghostPositions, pelletPositions, validActionsList):
@@ -118,7 +141,7 @@ class GameController(object):
         self.fruit = None
         self.pause = Pause(True)
         self.level = 0
-        self.lives = 5
+        self.lives = PACMAN_LIVES
         self.score = 0
         self.textgroup = TextGroup()
         self.lifesprites = LifeSprites(self.lives)
@@ -131,10 +154,27 @@ class GameController(object):
         self.isAi = (mode == "ai" or mode == "benchmark")
         self.isBenchmark = (mode == "benchmark")
         self.benchmarkCount = None
-        if self.isBenchmark:
-            self.benchmarkCount = 0
+        self.initBenchmark()
         self.minimaxDepth = 2 if self.isAi else None
         self._hash = random.randint(0000000, 9999999)
+
+    def initBenchmark(self):
+        if self.isBenchmark:
+            self.benchmarkCount = 0
+            open('average_score.txt', 'w')
+
+    def updateBenchmark(self):
+        if self.isBenchmark:
+            with open('average_score.txt', 'a') as f:
+                f.write(str(self.score)+'\n')
+
+    def getBenchmarkAverage(self):
+        if self.isBenchmark:
+            output = read_file_and_calculate_average('average_score.txt')
+            s = str(output)
+            print("Benchmark average score:",s)
+            with open('average_score.txt', 'w') as f:
+                f.write(s+'\n')
 
     def getHash(self):
         return self._hash
@@ -205,6 +245,9 @@ class GameController(object):
         dt = self.clock.tick(30) / 1000.0
         self.textgroup.update(dt)
         self.pellets.update(dt)
+        if self.isBenchmark and self.pause.paused:
+            self.pause.paused = False
+            self.textgroup.benchmarkText()
         if not self.pause.paused:
             self.ghosts.update(dt)      
             if self.fruit is not None:
@@ -284,18 +327,21 @@ class GameController(object):
                         self.lifesprites.removeImage()
                         self.pacman.die()               
                         self.ghosts.hide()
-                        if self.isBenchmark:
-                            self.benchmarkCount+=1
-                            print(self.score)
-                            if self.benchmarkCount == 100:
-                                print()
-                                exit()
+                        if self.lives <= 0:
+                            if self.isBenchmark:
+                                self.benchmarkCount+=1
+                                self.updateBenchmark()
+                                if self.benchmarkCount == 3:
+                                    self.getBenchmarkAverage()
+                                    exit()
+                                else:
+                                    self.restartGame()
                             else:
-                                self.restartGame()
-                        else:
-                            if self.lives <= 0:
                                 self.textgroup.showText(GAMEOVERTXT)
                                 self.pause.setPause(pauseTime=3, func=self.restartGame)
+                        else:
+                            if self.isBenchmark:
+                                self.resetLevel()
                             else:
                                 self.pause.setPause(pauseTime=3, func=self.resetLevel)
     
@@ -303,7 +349,6 @@ class GameController(object):
         if self.pellets.numEaten == 50 or self.pellets.numEaten == 140:
             if self.fruit is None:
                 self.fruit = Fruit(self.nodes.getNodeFromTiles(9, 20), self.level)
-                print(self.fruit)
         if self.fruit is not None:
             if self.pacman.collideCheck(self.fruit):
                 self.updateScore(self.fruit.points)
@@ -335,7 +380,7 @@ class GameController(object):
         self.textgroup.updateLevel(self.level)
 
     def restartGame(self):
-        self.lives = 5
+        self.lives = PACMAN_LIVES
         self.level = 0
         self.pause.paused = True
         self.fruit = None
