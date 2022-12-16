@@ -48,7 +48,7 @@ directiondict = {
 }
 
 MAX_DEPTH = 8
-DEBUG = True
+DEBUG = False
 
 def debug(message):
     if DEBUG:
@@ -166,6 +166,7 @@ class GameController(object):
     def updateBenchmark(self):
         if self.isBenchmark:
             with open('average_score.txt', 'a') as f:
+                print(self.score)
                 f.write(str(self.score)+'\n')
 
     def getBenchmarkAverage(self):
@@ -279,7 +280,6 @@ class GameController(object):
         self.render()
         self.ghostPositionsPrintout()
 
-        
     def ghostPositionsPrintout(self):
         for i in range(0, len(self.ghosts.ghosts)):
             g = self.ghosts.ghosts[i]
@@ -486,9 +486,9 @@ class GameController(object):
 
         mode, closestGhostImportance = self.ghosts.ghosts[0].mode.current, None
         if mode is FREIGHT:
-            closestGhostImportance = 1000
+            closestGhostImportance = 10000
         else:
-            closestGhostImportance = -1000
+            closestGhostImportance = -10000
         def closestGhost(gs):
             pacmanPos = gs.getPacmanPosition()
             ghostPositions = gs.getGhostPositions()
@@ -511,40 +511,27 @@ class GameController(object):
         def proximityToPellets(gs):
             pacmanPos = gs.getPacmanPosition()
             pelletPositions = gs.getPelletPositions()
-            proximity = 0
+            totalproximity = 0
             for pellet in pelletPositions:
-                if pellet.name == PELLET:
-                    d = manhattan(pacmanPos, pellet.position)
-                    if d < 5:
-                        proximity += (100 / d)
-                    elif d < 10:
-                        proximity += (75 / d)
-                    elif d < 25:
-                        proximity += (50 / d)
-                    elif d < 50:
-                        proximity += (20 / d)
-                    elif d < 75:
-                        proximity += (15 / d)
-                    elif d < 100:
-                        proximity += (10 / d)
-                    elif d < 200:
-                        proximity += (5 / d)
-                elif pellet.name == POWERPELLET:
-                    d = manhattan(pacmanPos, pellet.position)
-                    if d < 5:
-                        proximity += 10*(100 / d)
-                    elif d < 10:
-                        proximity += 10*(75 / d)
-                    elif d < 25:
-                        proximity += 10*(50 / d)
-                    elif d < 50:
-                        proximity += 10*(20 / d)
-                    elif d < 75:
-                        proximity += 10*(15 / d)
-                    elif d < 100:
-                        proximity += 10*(10 / d)
-                    elif d < 200:
-                        proximity += 10*(5 / d)
+                proximity = 0
+                d = manhattan(pacmanPos, pellet.position)
+                if d < 5:
+                    proximity = (100 / d)
+                elif d < 10:
+                    proximity = (75 / d)
+                elif d < 25:
+                    proximity = (50 / d)
+                elif d < 50:
+                    proximity = (20 / d)
+                elif d < 75:
+                    proximity = (15 / d)
+                elif d < 100:
+                    proximity = (10 / d)
+                elif d < 200:
+                    proximity = (5 / d)
+                if pellet.name == POWERPELLET:
+                    proximity *= 100
+                totalproximity+=proximity
             return proximity
 
         cg = closestGhost(gs)[1]
@@ -559,7 +546,6 @@ class GameController(object):
         elif 300 <= cg and cg < 400:
             closestGhostImportance *= 5
         else:
-            proximityToPelletsImportance *= 10
             closestGhostImportance = 0
         evalGamestate = 0
         evalGamestate += (1/(sqrt(cg+(.0001)))) * closestGhostImportance
