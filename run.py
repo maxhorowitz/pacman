@@ -48,7 +48,7 @@ directiondict = {
 }
 
 MAX_DEPTH = 8
-DEBUG = False
+DEBUG = True
 
 def debug(message):
     if DEBUG:
@@ -277,6 +277,14 @@ class GameController(object):
             afterPauseMethod()
         self.checkEvents()
         self.render()
+        self.ghostPositionsPrintout()
+
+        
+    def ghostPositionsPrintout(self):
+        for i in range(0, len(self.ghosts.ghosts)):
+            g = self.ghosts.ghosts[i]
+            s = str("i:"+str(i)+" "+str(g.mode.current==SPAWN)+", "+str(g.position))
+            debug(s)
 
     def checkEvents(self):
         for event in pygame.event.get():
@@ -478,20 +486,24 @@ class GameController(object):
 
         mode, closestGhostImportance = self.ghosts.ghosts[0].mode.current, None
         if mode is FREIGHT:
-            closestGhostImportance = 10000
+            closestGhostImportance = 1000
         else:
-            closestGhostImportance = -10000
+            closestGhostImportance = -1000
         def closestGhost(gs):
             pacmanPos = gs.getPacmanPosition()
             ghostPositions = gs.getGhostPositions()
             closestGhost, distanceToClosestGhost = None, None
             ghostDistances = []
-            for i in range(0, len(ghostPositions)):
-                d = manhattan(pacmanPos, ghostPositions[i])
-                ghostDistances.append(d)
-                if closestGhost is None or distanceToClosestGhost > d:
-                    closestGhost = (i+1)
-                    distanceToClosestGhost = d
+            for i in [BLINKY_AGENT, PINKY_AGENT, INKY_AGENT, CLYDE_AGENT]:
+                gp = self.ghosts.ghosts[i-1].position
+                if 176 < gp.x and gp.x < 278 and 250 < gp.y and gp.y < 296:
+                    ghostDistances.append(inf)
+                else:
+                    d = manhattan(pacmanPos, ghostPositions[i-1])
+                    ghostDistances.append(d)
+                    if closestGhost is None or distanceToClosestGhost > d:
+                        closestGhost = (i+1)
+                        distanceToClosestGhost = d
             debug(str(ghostDistances))
             return closestGhost, distanceToClosestGhost
 

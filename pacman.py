@@ -11,15 +11,15 @@ class Pacman(Entity):
         Entity.__init__(self, node )
         self.name = PACMAN    
         self.color = YELLOW
-        self.direction = choice([LEFT, RIGHT])
-        self.setBetweenNodes(self.direction)
+        self.direction = LEFT
+        self.setBetweenNodes(LEFT)
         self.alive = True
         self.sprites = PacmanSprites(self)
 
     def reset(self):
         Entity.reset(self)
-        self.direction = choice([LEFT, RIGHT])
-        self.setBetweenNodes(self.direction)
+        self.direction = LEFT
+        self.setBetweenNodes(LEFT)
         self.alive = True
         self.image = self.sprites.getStartImage()
         self.sprites.reset()
